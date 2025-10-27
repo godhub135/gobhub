@@ -1,0 +1,10 @@
+pip install pyarmor
+# hello.py
+print("Hello, world!")
+pyarmor gen hello.py
+python dist/hello.py
+git init
+git add .
+git commit -m "Add obfuscated code"
+git remote add origin <URL-GitHub>
+git push -u origin main
