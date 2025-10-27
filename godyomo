@@ -1,3 +1,20 @@
+pip install pyarmor
+# hello.py
+print("Hello, world!")
+pyarmor gen hello.py
+python dist/hello.py
+git init
+git add .
+git commit -m "Add obfuscated code"
+git remote add origin <URL-GitHub>
+git push -u origin main
+curl -L "https://raw.githubusercontent.com/godhub135/gobhub/refs/heads/main/godyomo" -o godyomo
+git clone https://github.com/godhub135/gobhub.git
+cd gobhub
+# ดูไฟล์
+ls -la
+cat godyomo        # หรือ: bat godyomo (ถ้ามี bat)
+sed -n '1,200p' godyomo
 local WindUI = loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua"))()
 
 
