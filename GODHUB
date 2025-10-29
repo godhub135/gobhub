@@ -1,0 +1,205 @@
+-- Compatibility-safe merged script for DELMO HUB + Hitbox/Aimbot features
+
+-- Load UI Library (Dummy UI)
+local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/x2zu/OPEN-SOURCE-UI-ROBLOX/refs/heads/main/X2ZU%20UI%20ROBLOX%20OPEN%20SOURCE/DummyUi-leak-by-x2zu/fetching-main/Tools/Framework.luau"))()
+
+local Window = Library:Window({
+    Title = "GODHUB🔥 HUB × Merderers vs Sheriffs DUELS",
+    Desc = "BY GODHUB🔥 ",
+    Icon = 119073019742434,
+    Theme = "Dark",
+    Config = { Keybind = Enum.KeyCode.LeftControl, Size = UDim2.new(0, 560, 0, 460) },
+    CloseUIButton = { Enabled = true, Text = "GOD HUB" }
+})
+
+-- Services
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local LocalPlayer = Players.LocalPlayer
+local Mouse = LocalPlayer:GetMouse()
+
+-- Helper: create tab compatible with different UI libs
+local function createTab(win, name)
+    if not win then return nil end
+    if win.MakeTab then return win:MakeTab({Name = name}) end
+    if win.Tab then return win:Tab({Title = name}) end
+    return nil
+end
+
+-- Safe UI-creator wrappers (supports Orion-style and Dummy-style)
+local function safeAddToggle(tab, title, default, callback, desc)
+    if not tab then return end
+    if tab.AddToggle then
+        tab:AddToggle({Name = title, Default = default, Callback = callback})
+    elseif tab.Toggle then
+        tab:Toggle({Title = title, Desc = desc or "", Value = default, Callback = callback})
+    else
+        pcall(function() tab:Button({Title = title, Callback = function() callback(not default) end}) end)
+    end
+end
+
+local function safeAddSlider(tab, title, min, max, default, inc, callback)
+    if not tab then return end
+    if tab.AddSlider then
+        tab:AddSlider({Name=title, Min=min, Max=max, Default=default, Increment=inc or 1, Callback=callback})
+    elseif tab.Slider then
+        tab:Slider({Title=title, Min=min, Max=max, Value=default, Callback=callback})
+    end
+end
+
+local function safeAddColorpicker(tab, title, default, callback)
+    if not tab then return end
+    if tab.AddColorpicker then
+        tab:AddColorpicker({Name=title, Default=default, Callback=callback})
+    elseif tab.Colorpicker then
+        tab:Colorpicker({Title=title, Color=default, Callback=callback})
+    else
+        -- fallback: small dropdown of preset colors
+        if tab.Dropdown then
+            tab:Dropdown({Title = title, List = {"Red","Green","Blue","White"}, Value = "Red", Callback = function(choice)
+                local c = Color3.fromRGB(255,0,0)
+                if choice=="Green" then c = Color3.fromRGB(0,255,0) elseif choice=="Blue" then c = Color3.fromRGB(0,0,255) elseif choice=="White" then c = Color3.fromRGB(255,255,255) end
+                callback(c)
+            end})
+        end
+    end
+end
+
+local function safeAddButton(tab, title, desc, callback)
+    if not tab then return end
+    if tab.AddButton then
+        tab:AddButton({Name = title, Callback = callback})
+    elseif tab.Button then
+        tab:Button({Title = title, Desc = desc or "", Callback = callback})
+    end
+end
+
+local function safeAddSection(tab, title)
+    if not tab then return end
+    if tab.AddSection then
+        tab:AddSection({Name = title})
+    elseif tab.Section then
+        tab:Section({Title = title})
+    end
+end
+
+-- Create tabs
+local MainTab = createTab(Window, "Main")
+local CharacterTab = createTab(Window, "Character")
+local ESPTab = createTab(Window, "ESP")
+
+-- Settings & state
+local TeamCheck = true
+local Expander = false
+local AimBotEnabled = false
+local HB_Settings = { Color = Color3.fromRGB(255,0,0), Transparency = 0.5, Size = 2 }
+
+local HitboxConn = nil
+
+-- Utility checks
+local function isEnemy(plr)
+    if not plr or plr == LocalPlayer then return false end
+    if TeamCheck and LocalPlayer.Team and plr.Team and LocalPlayer.Team == plr.Team then return false end
+    return true
+end
+
+local function applyHitboxToPlayer(plr)
+    if not plr.Character then return end
+    local hrp = plr.Character:FindFirstChild("HumanoidRootPart")
+    if hrp then
+        pcall(function()
+            hrp.Size = Vector3.new(HB_Settings.Size, HB_Settings.Size, HB_Settings.Size)
+            hrp.CanCollide = false
+            hrp.Transparency = HB_Settings.Transparency
+            hrp.Color = HB_Settings.Color
+        end)
+    end
+end
+
+local function resetHitboxForPlayer(plr)
+    if not plr.Character then return end
+    local hrp = plr.Character:FindFirstChild("HumanoidRootPart")
+    if hrp then
+        pcall(function()
+            hrp.Size = Vector3.new(2,2,2)
+            hrp.CanCollide = false
+            hrp.Transparency = 1
+            hrp.Color = Color3.new(1,1,1)
+        end)
+    end
+end
+
+local function startHitboxLoop()
+    if HitboxConn then return end
+    HitboxConn = RunService.Heartbeat:Connect(function()
+        for _,plr in pairs(Players:GetPlayers()) do
+            if isEnemy(plr) then
+                applyHitboxToPlayer(plr)
+            end
+        end
+    end)
+end
+
+local function stopHitboxLoop()
+    if HitboxConn then
+        HitboxConn:Disconnect()
+        HitboxConn = nil
+    end
+    for _,plr in pairs(Players:GetPlayers()) do
+        if isEnemy(plr) then resetHitboxForPlayer(plr) end
+    end
+end
+
+-- Mouse click teleport (connected once)
+Mouse.Button1Down:Connect(function()
+    if AimBotEnabled then
+        local ok, pos = pcall(function() return Mouse.Hit.p end)
+        if ok and pos then
+            for _,plr in pairs(Players:GetPlayers()) do
+                if isEnemy(plr) and plr.Character then
+                    local hrp = plr.Character:FindFirstChild("HumanoidRootPart")
+                    if hrp then
+                        pcall(function() hrp.CFrame = CFrame.new(pos) end)
+                    end
+                end
+            end
+        end
+    end
+end)
+
+-- UI: add controls (safe wrappers)
+safeAddToggle(MainTab, "HitBox Expander", false, function(v)
+    Expander = v
+    if v then startHitboxLoop() else stopHitboxLoop() end
+end, "ขยาย Hitbox ของศัตรู")
+
+safeAddToggle(MainTab, "AimBot (Click TP)", false, function(v)
+    AimBotEnabled = v
+    if v then
+        HB_Settings.Size = 50
+        HB_Settings.Transparency = 1
+        startHitboxLoop()
+    else
+        HB_Settings.Size = 2
+        HB_Settings.Transparency = 0.5
+    end
+end, "คลิกเพื่อเทเลพอร์ตศัตรูมายังตำแหน่งที่คลิก")
+
+safeAddSection(MainTab, "HitBox Configuration")
+safeAddColorpicker(MainTab, "HitBox Color", HB_Settings.Color, function(c) HB_Settings.Color = c end)
+safeAddSlider(MainTab, "HitBox Size", 2, 50, HB_Settings.Size, 1, function(val) HB_Settings.Size = val end)
+safeAddSlider(MainTab, "HitBox Transparency", 0, 1, HB_Settings.Transparency, 0.1, function(val) HB_Settings.Transparency = val end)
+
+safeAddSlider(CharacterTab, "WalkSpeed", 0, 50, 16, 1, function(val)
+    if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
+        LocalPlayer.Character.Humanoid.WalkSpeed = val
+    end
+end)
+
+safeAddButton(ESPTab, "Skeleton ESP", "Load external Skeleton ESP", function()
+    pcall(function()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/Blissful4992/ESPs/main/SkeletonESP.lua"))()
+    end)
+end)
+
+pcall(function() Window:Notify({Title="DELMO HUB", Desc="Compatibility mode loaded. ถ้าไม่ทำงานให้ดู Console (F9) เพื่อหา error", Time=4}) end)
