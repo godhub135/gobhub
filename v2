@@ -1,0 +1,140 @@
+
+task.spawn(function()
+	while waits(0.2) do 
+		BankBalance:SetDesc('<b><font color="#00FF00">$' .. ATMMoney() .. '</font></b>')
+		HandBalance:SetDesc('<b><font color="#FFFF00">$' .. HandMoney() .. '</font></b>')
+		RunService:Set3dRenderingEnabled(not c().WhiteScreens)
+		Ac("set_sprinting_1", true)
+		pcall(function()
+			-- for i,v in getn(GetAllATM()) do 
+			-- 	if v.Name == "ATM" then 
+			-- 		if c().SelectFarming == "ATM" then 
+			-- 			local weld = v.Area:FindFirstChild('WeldConstraint')
+			-- 			if not weld then 
+			-- 				local d = Instance.new('WeldConstraint',v.Area)
+			-- 				d.Enabled = false
+			-- 				d.Part0 = v.Area 
+			-- 				d.Part1 = RootPart
+			-- 			end
+			-- 			if c().StartFarming then 
+			-- 				if Humanoid.Sit then 
+			-- 				weld.Enabled = true 
+			-- 				else 
+			-- 				weld.Enabled = false 
+			-- 				end
+			-- 			else 
+			-- 				weld.Enabled = false 
+			-- 			end
+			-- 		end
+			-- 	end
+			-- end
+			for _, v in getn(Players:GetPlayers()) do
+				if v ~= Client and v.Character and v.Character:FindFirstChild("HumanoidRootPart") then
+					local root = v.Character.HumanoidRootPart
+
+					local gui = root:FindFirstChild("ItemBillboard")
+					if not gui then
+						gui = Instance.new("BillboardGui")
+						gui.Name = "ItemBillboard"
+						gui.AlwaysOnTop = true
+						gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+						gui.Size = UDim2.new(0, 200, 0, 50)
+						gui.StudsOffset = Vector_new(0, -5, 0)
+						gui.ExtentsOffset = Vector_new(0, 1, 0)
+						gui.LightInfluence = 1
+						gui.Parent = root
+
+						local bg = Instance.new("Frame")
+						bg.Name = "BG"
+						bg.BackgroundTransparency = 1
+						bg.Size = UDim2.new(1, 0, 1, 0)
+						bg.AnchorPoint = Vector2.new(0.5, 0.5)
+						bg.Position = UDim2.new(0.5, 0, 0.5, 0)
+						bg.Parent = gui
+
+						local layout = Instance.new("UIListLayout")
+						layout.FillDirection = Enum.FillDirection.Horizontal
+						layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+						layout.VerticalAlignment = Enum.VerticalAlignment.Center
+						layout.Padding = UDim.new(0, 5)
+						layout.Parent = bg
+					end
+
+					local bg = gui:FindFirstChild("BG")
+					local Items = {}
+					for _, container in get({v.Backpack, v.Character}) do
+						if container then
+							for _, tool in get(container:GetChildren()) do
+								if tool:IsA("Tool") and not tool:GetAttribute("JobTool") and not tool:GetAttribute("Locked") then
+									local itemFolder = tool:GetAttribute("AmmoType") and ReplicatedStorage.Items.gun or ReplicatedStorage.Items.melee
+									for _, z in get(itemFolder:GetChildren()) do
+										if tool:GetAttribute("RarityName") == z:GetAttribute("RarityName")
+											and tool:GetAttribute("RarityPrice") == z:GetAttribute("RarityPrice") then
+
+											local imageId = z:GetAttribute("ImageId")
+											if imageId then
+												Items[z.Name] = true
+												if not bg:FindFirstChild(z.Name) then
+													local icon = Instance.new("ImageLabel")
+													icon.Name = z.Name
+													icon.Image = imageId
+													icon.BackgroundTransparency = 1
+													icon.BorderSizePixel = 0
+													icon.Size = UDim2.new(0, 30, 0, 30)
+													icon.Visible = true
+													icon.Parent = bg
+												end
+											end
+										end
+									end
+								end
+							end
+						end
+					end
+					
+					gui.Enabled = c().InventoryViewer or false
+
+					for _, icon in pairs(bg:GetChildren()) do
+						if icon:IsA("ImageLabel") and not Items[icon.Name] then
+							icon:Destroy()
+						end
+					end
+
+					if v.Character:FindFirstChild('Highlight') then v.Character:FindFirstChild('Highlight'):Destroy() end
+					local existing = v.Character:FindFirstChild("Sexy")
+					if not existing then
+						local hl = Instance.new("Highlight")
+						hl.Name = "Sexy"
+						hl.Adornee = v.Character
+						hl.FillColor = Color3.fromRGB(255, 8, 178)
+						hl.FillTransparency = 0.1
+						hl.OutlineTransparency = 0
+						hl.Parent = v.Character
+					end
+					existing.OutlineColor = Color3.fromRGB(255, 255, 255) 
+					existing.Enabled = c().EnabledHightlight or false
+					
+				end
+			end
+			local AllATM = GetAllATM()
+			if AllATM then
+				for i,v in getn(AllATM) do 
+					if v:IsA("Model") then
+						local existing = v:FindFirstChild("Highlight")
+						if not existing then
+							local hl = Instance.new("Highlight")
+							hl.Name = "Highlight"
+							hl.Adornee = v
+							hl.FillColor = Color3.fromRGB(0, 0, 0)
+							hl.FillTransparency = 0.1
+							hl.OutlineTransparency = 0
+							hl.Parent = v
+						end
+						existing.OutlineColor = GetAtmIsNotHacked(v) and Color3.fromRGB(17, 99, 2) or Color3.fromRGB(99, 0, 2)
+						existing.Enabled = c().EnabledATMViewer or false;
+					end
+				end
+			end
+		end)
+	end
+end)
